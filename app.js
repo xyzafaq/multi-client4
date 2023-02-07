@@ -1,7 +1,9 @@
+const cors=require('cors')
 const express = require('express');
 const app = express();
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser')
+app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 require('./Database/connec')    //Database connected file

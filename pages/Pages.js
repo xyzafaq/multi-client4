@@ -9,19 +9,22 @@ const UserModel = require('../Database/UserSchema');
 const ProductModel = require('../Database/ProductSchema');
 const Authentication = require('../pages/Authentication');
 router.get('/',(req,res)=>{
-    console.log('homePage started');
+    try {
+        console.log('homePage started');
     // res.send('Home Page');
+    } catch (error) {
+        console.log(error);
+    }
 })
 router.get('/collections', Authentication, (req,res)=>{
     const rootUser = req.rootUser;
     // console.log(rootUser);
     res.send(rootUser);
 })
-
 router.post('/signup',async (req,res)=>{
-    console.log(req.body);
-    const {name,email,password,confirmpassword,birthday} = req.body;
     try {
+        console.log(req.body);
+        const {name,email,password,confirmpassword,birthday} = req.body;
         if(!name || !email || !password){
             res.status(201).json({msg:"Please Fill all Fields"})
         }
@@ -50,44 +53,58 @@ router.post('/signup',async (req,res)=>{
 })
 router.post('/login',async (req,res)=>{
     // console.log(req.body);
-    const {email,password} = req.body;
-    if(!email || !password){
-        res.send({msg:'Invalid Credentials'});
-    }
-    const result = await UserModel.findOne({email:email});
-    if(!result){
-        res.send({msg:'Invalid Credentials'});
-    }else{
-        const checkPassword = await bcrypt.compare(password,result.password);
-        if(checkPassword){
-            const token = await result.generateAuthToken();
-            res.cookie('jwttoken',token);
-            if(result.email == "xyzafaq@gmail.com"){
-                res.send({msg:"admin"});
-            }
-            res.send(result);
-        }else{
+    try {
+        const {email,password} = req.body;
+        if(!email || !password){
             res.send({msg:'Invalid Credentials'});
         }
+        const result = await UserModel.findOne({email:email});
+        if(!result){
+            res.send({msg:'Invalid Credentials'});
+        }else{
+            const checkPassword = await bcrypt.compare(password,result.password);
+            if(checkPassword){
+                const token = await result.generateAuthToken();
+                res.cookie('jwttoken',token);
+                if(result.email == "xyzafaq@gmail.com"){
+                    res.send({msg:"admin"});
+                }
+                res.send(result);
+            }else{
+                res.send({msg:'Invalid Credentials'});
+            }
+        }
+    } catch (error) {
+        console.log(error);
     }
 })
 router.get('/isloggedin', async (req,res)=>{
-    const token = req.cookies.jwttoken; 
-    const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
-    const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
-    if(rootUser){
-        if(rootUser.email == "xyzafaq@gmail.com"){
-            res.send({msg:"admin"});
-        }else{
-            res.send({msg:"loggedin",data:rootUser});
+    try {
+        const token = req.cookies.jwttoken;
+        if(token){
+            const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+            const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
+            if(rootUser){
+                if(rootUser.email == "xyzafaq@gmail.com"){
+                    res.send({msg:"admin"});
+                }else{
+                    res.send({msg:"loggedin",data:rootUser});
+                }
+            }
         }
+    } catch (error) {
+        console.log(error);
     }
 })
 router.post('/searchUser', async(req,res)=>{
-    const {email} = req.body;
-    console.log(email);
-    const user = await UserModel.find({email});
-    res.send( { msg:"success", userdata: user } );
+    try {
+        const {email} = req.body;
+        console.log(email);
+        const user = await UserModel.find({email});
+        res.send( { msg:"success", userdata: user } );
+    } catch (error) {
+        console.log(error)
+    }
 })
 router.get('/allUser', async(req,res)=>{
     try {
@@ -99,14 +116,13 @@ router.get('/allUser', async(req,res)=>{
         console.log(error);
     }
 })
-
 router.post('/updateUser/:id', async (req,res)=>{
-    console.log(req.body);
-    console.log(req.params.id);
-    var id = req.params.id;
-    const {name,email,totalbalance,ppstart,ppadvance,pppro,initialcapital,grancias,bloqueado,disponible,miembrostotale,derivadostotale,rangostotale,ultimorango,saldo,cartera,mymembresia,estrategia,ganaciasretirades,totaldisponible,pic,tc,membreciabtc500,membreciabtc1000} = req.body;
-    console.log(id);
     try {
+        console.log(req.body);
+        console.log(req.params.id);
+        var id = req.params.id;
+        const {name,email,totalbalance,ppstart,ppadvance,pppro,initialcapital,grancias,bloqueado,disponible,miembrostotale,derivadostotale,rangostotale,ultimorango,saldo,cartera,mymembresia,estrategia,ganaciasretirades,totaldisponible,pic,tc,membreciabtc500,membreciabtc1000} = req.body;
+        console.log(id);
         const result = await UserModel.updateOne({_id:id},{ $set:{name,email,totalbalance,ppstart,ppadvance,pppro,initialcapital,grancias,bloqueado,disponible,miembrostotale,derivadostotale,rangostotale,ultimorango,saldo,cartera,mymembresia,estrategia,ganaciasretirades,totaldisponible,pic,tc,membreciabtc500,membreciabtc1000}})
         console.log(result);
         if(result){
@@ -118,12 +134,12 @@ router.post('/updateUser/:id', async (req,res)=>{
 })
 router.post('/bankinfo', async (req,res)=>{
     // console.log(req.body);
-    const { fullname, bankname, iban, phone, country } = req.body;
-    const token = req.cookies.jwttoken; 
-    const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
-    const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
-    // console.log(rootUser);
     try {
+        const { fullname, bankname, iban, phone, country } = req.body;
+        const token = req.cookies.jwttoken; 
+        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+        const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
+        // console.log(rootUser);
         const result = await UserModel.updateOne({_id:rootUser._id},{ $set:{fullname, bankname, iban, phone, country}});
         // console.log(result);
         if(result){
@@ -134,13 +150,13 @@ router.post('/bankinfo', async (req,res)=>{
     }
 })
 router.post('/withdrawrequest', async (req,res)=>{
-    console.log(req.body);
-    const { withdraw } = req.body;
-    const token = req.cookies.jwttoken; 
-    const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
-    const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
-    // console.log(rootUser);
     try {
+        console.log(req.body);
+        const { withdraw } = req.body;
+        const token = req.cookies.jwttoken; 
+        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+        const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
+        // console.log(rootUser);
         // const result = await UserModel.updateOne({ _id: rootUser._id }, { $set: { withdraws: [] } });
         const result = await UserModel.findOne({ _id: rootUser._id},{withdraws: 1})
         // console.log(result.withdraws.length);
@@ -174,8 +190,8 @@ router.get('/AllwithdrawalRequests',async (req,res)=>{
         }
 })
 router.post('/getuserdata',async (req,res)=>{
-    const { id } = req.body;
     try {
+        const { id } = req.body;
         const result = await UserModel.findOne({_id:id});
         if(result){
             // console.log(result);
@@ -196,28 +212,28 @@ router.get('/getuserdata/:id',async (req,res)=>{
             console.log(error);
         }
 })
-
 router.get('/logout',async(req,res)=>{
-    const token = req.cookies.jwttoken; 
-    const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
-    const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
-    if(rootUser){
-        res.clearCookie('jwttoken');
-        res.send({msg:"loggedOut"});
-    }
-    // res.redirect('/');
-})
-
-router.post('/addmember', async (req,res)=>{
-    // console.log(req.params.id);
-    // console.log(req.body);
-
-    const token = req.cookies.jwttoken; 
-    const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
-    const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});  // current active user
-    
-    const {name,email,password,confirmpassword,birthday} = req.body;
     try {
+        const token = req.cookies.jwttoken; 
+        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+        const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
+        if(rootUser){
+            res.clearCookie('jwttoken');
+            res.send({msg:"loggedOut"});
+        }
+    } catch (error) {
+        console.log(error);
+    }
+})
+router.post('/addmember', async (req,res)=>{
+    try {
+        // console.log(req.params.id);
+        // console.log(req.body);    
+        const token = req.cookies.jwttoken; 
+        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+        const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});  // current active user
+        
+        const {name,email,password,confirmpassword,birthday} = req.body;
         if(!name || !email || !password){
             res.status(201).json({msg:"Please Fill all Fields"})
         }
@@ -245,7 +261,6 @@ router.post('/addmember', async (req,res)=>{
         console.log(error);
     }
 })
-
 const uploadProductimg = multer({
     storage: multer.diskStorage({
         destination: function(req,file,cb)
@@ -259,11 +274,10 @@ const uploadProductimg = multer({
         }
     })
 }).single("image")
-
 var product_id = "";
 router.post('/addproduct',async (req,res)=>{
-    const {title,description,price,collecton,rating,overview,type,likes,marketplace,blockchain,expireDate,discount,status} = req.body;
     try {
+        const {title,description,price,collecton,rating,overview,type,likes,marketplace,blockchain,expireDate,discount,status} = req.body;
         console.log(req.body);
         const AddedProduct = ProductModel({title,description,price,collecton,rating,overview,type,likes,marketplace,blockchain,expireDate,discount,status,image:""});
         const result = await AddedProduct.save();
@@ -286,7 +300,6 @@ router.post('/uploadProductimg', uploadProductimg , async (req,res)=>{
         res.send({msg:"failed"});
     }
 })
-
 router.get('/deleteProduct/:id', async (req,res)=>{
     try {
         const result = await ProductModel.deleteOne({_id:req.params.id});
@@ -309,34 +322,43 @@ router.get('/getProduct', async (req,res)=>{
     }
 })
 router.get('/getProductByid/:id',async (req,res)=>{
-    const result = await ProductModel.findOne({_id:req.params.id});
-    res.send(result);
+    try {
+        const result = await ProductModel.findOne({_id:req.params.id});
+        res.send(result);
+    } catch (error) {
+        console.log(error);
+    }
 })
 router.post('/updatePassword',async(req,res)=>{
-    console.log(req.body);
-    let {oldPassword,newPassword,confirmNewPassword} = req.body;
-    if(!oldPassword || !newPassword || !confirmNewPassword){
-        res.send({msg:"unfill"})
-    }
-    if(newPassword!=confirmNewPassword){
-        res.send({msg:"NotMatching"})
-    }
-    if(newPassword.length<8){
-        res.send({msg:"Password must contain 8 characters"})
-    }
-    const token = req.cookies.jwttoken; 
-    const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
-    const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
-    const veriFyoldPassword = await bcrypt.compare(oldPassword,rootUser.password);
-    if(veriFyoldPassword){
-        newPassword = await bcrypt.hash(newPassword,12);
-        // console.log(newPassword);
-        const result = await UserModel.updateOne({_id:rootUser._id},{ $set:{ password:newPassword }})
-        if(result){
-            res.send({msg:"success"})
+    try {
+        
+        console.log(req.body);
+        let {oldPassword,newPassword,confirmNewPassword} = req.body;
+        if(!oldPassword || !newPassword || !confirmNewPassword){
+            res.send({msg:"unfill"})
         }
-    }else{
-        res.send({msg:"incorrect Password"});
+        if(newPassword!=confirmNewPassword){
+            res.send({msg:"NotMatching"})
+        }
+        if(newPassword.length<8){
+            res.send({msg:"Password must contain 8 characters"})
+        }
+        const token = req.cookies.jwttoken; 
+        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+        const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
+        const veriFyoldPassword = await bcrypt.compare(oldPassword,rootUser.password);
+        if(veriFyoldPassword){
+            newPassword = await bcrypt.hash(newPassword,12);
+            // console.log(newPassword);
+            const result = await UserModel.updateOne({_id:rootUser._id},{ $set:{ password:newPassword }})
+            if(result){
+                res.send({msg:"success"})
+            }
+        }else{
+            res.send({msg:"incorrect Password"});
+        }
+    } catch (error) {
+        console.log(error);
     }
 })
 router.get('/userData',async (req,res)=>{
