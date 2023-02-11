@@ -6,7 +6,7 @@ const Authentication = async (req,res,next)=>{
             // console.log("authenticating");
         const token = req.cookies.jwttoken;  //Geting Cookie from google
         // console.log(token);
-        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);  //Giving ID of user with that token
+        const verifyToken = jwt.verify(token,"helloiamafaqstudentofuniversityofmanagementandtechonology");  //Giving ID of user with that token
         // console.log(verifyToken);
         const rootUser = await userModel.findOne({_id:verifyToken._id,"tokens.token":token});
         // console.log(rootUser);

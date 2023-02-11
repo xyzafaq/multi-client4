@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken')
 const router = express.Router();
 const multer = require('multer');
 router.use(express.json());
-
 const UserModel = require('../Database/UserSchema');
 const ProductModel = require('../Database/ProductSchema');
 const Authentication = require('../pages/Authentication');
@@ -15,11 +14,6 @@ router.get('/',(req,res)=>{
     } catch (error) {
         console.log(error);
     }
-})
-router.get('/collections', Authentication, (req,res)=>{
-    const rootUser = req.rootUser;
-    // console.log(rootUser);
-    res.send(rootUser);
 })
 router.post('/signup',async (req,res)=>{
     try {
@@ -40,9 +34,9 @@ router.post('/signup',async (req,res)=>{
             const result = await newUser.save();
             if(result){
                 const token = await result.generateAuthToken();
-                res.cookie('jwttoken',token);
+                // res.cookie('jwttoken',token);
                 // UserModel({isLoggedIn:true}).save();
-                res.status(201).json({msg:'User Registered Successfuly.'});
+                res.status(201).json({msg:'User Registered Successfuly.',authToken:token});
             }else{
                 res.status(201).json({msg:'Failed to Register'});
             }
@@ -65,11 +59,12 @@ router.post('/login',async (req,res)=>{
             const checkPassword = await bcrypt.compare(password,result.password);
             if(checkPassword){
                 const token = await result.generateAuthToken();
-                res.cookie('jwttoken',token);
-                if(result.email == "xyzafaq@gmail.com"){
-                    res.send({msg:"admin"});
+                // res.cookie('jwttoken',token);
+                if(result.email == "alan@admin.com"){
+                    res.send({msg:"admin",authToken:token});
+                }else{
+                    res.send({user:result,authToken:token});
                 }
-                res.send(result);
             }else{
                 res.send({msg:'Invalid Credentials'});
             }
@@ -80,12 +75,12 @@ router.post('/login',async (req,res)=>{
 })
 router.get('/isloggedin', async (req,res)=>{
     try {
-        const token = req.cookies.jwttoken;
-        if(token){
-            const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+        const token = req.header("authToken");
+        if(token.length>10){
+            const verifyToken = jwt.verify(token,"helloiamafaqstudentofuniversityofmanagementandtechonology");
             const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
             if(rootUser){
-                if(rootUser.email == "xyzafaq@gmail.com"){
+                if(rootUser.email == "alan@admin.com"){
                     res.send({msg:"admin"});
                 }else{
                     res.send({msg:"loggedin",data:rootUser});
@@ -94,16 +89,6 @@ router.get('/isloggedin', async (req,res)=>{
         }
     } catch (error) {
         console.log(error);
-    }
-})
-router.post('/searchUser', async(req,res)=>{
-    try {
-        const {email} = req.body;
-        console.log(email);
-        const user = await UserModel.find({email});
-        res.send( { msg:"success", userdata: user } );
-    } catch (error) {
-        console.log(error)
     }
 })
 router.get('/allUser', async(req,res)=>{
@@ -136,8 +121,10 @@ router.post('/bankinfo', async (req,res)=>{
     // console.log(req.body);
     try {
         const { fullname, bankname, iban, phone, country } = req.body;
-        const token = req.cookies.jwttoken; 
-        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+        //const token = req.cookies.jwttoken;
+        const token = req.header("authToken");
+        // console.log(token);
+        const verifyToken = jwt.verify(token,"helloiamafaqstudentofuniversityofmanagementandtechonology");
         const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
         // console.log(rootUser);
         const result = await UserModel.updateOne({_id:rootUser._id},{ $set:{fullname, bankname, iban, phone, country}});
@@ -153,8 +140,9 @@ router.post('/withdrawrequest', async (req,res)=>{
     try {
         console.log(req.body);
         const { withdraw } = req.body;
-        const token = req.cookies.jwttoken; 
-        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+        const token = req.header("authToken");
+        // const token = req.cookies.jwttoken;
+        const verifyToken = jwt.verify(token,"helloiamafaqstudentofuniversityofmanagementandtechonology");
         const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
         // console.log(rootUser);
         // const result = await UserModel.updateOne({ _id: rootUser._id }, { $set: { withdraws: [] } });
@@ -184,7 +172,6 @@ router.get('/AllwithdrawalRequests',async (req,res)=>{
         if(results){
             res.send({msg: withdrawalsArray })
         }
-
     } catch (error) {
             console.log(error);
         }
@@ -214,11 +201,12 @@ router.get('/getuserdata/:id',async (req,res)=>{
 })
 router.get('/logout',async(req,res)=>{
     try {
-        const token = req.cookies.jwttoken; 
-        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+        // const token = req.cookies.jwttoken;
+        const token = req.header("authToken");
+        const verifyToken = jwt.verify(token,"helloiamafaqstudentofuniversityofmanagementandtechonology");
         const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
         if(rootUser){
-            res.clearCookie('jwttoken');
+            //res.clearCookie('jwttoken');
             res.send({msg:"loggedOut"});
         }
     } catch (error) {
@@ -227,10 +215,10 @@ router.get('/logout',async(req,res)=>{
 })
 router.post('/addmember', async (req,res)=>{
     try {
-        // console.log(req.params.id);
         // console.log(req.body);    
-        const token = req.cookies.jwttoken; 
-        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
+        // const token = req.cookies.jwttoken;
+        const token = req.header("authToken");
+        const verifyToken = jwt.verify(token,"helloiamafaqstudentofuniversityofmanagementandtechonology");
         const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});  // current active user
         
         const {name,email,password,confirmpassword,birthday} = req.body;
@@ -261,77 +249,8 @@ router.post('/addmember', async (req,res)=>{
         console.log(error);
     }
 })
-const uploadProductimg = multer({
-    storage: multer.diskStorage({
-        destination: function(req,file,cb)
-        {
-            cb(null,"../client/public/uploads")
-        },
-        filename: function(req,file,cb){
-            // console.log(file);
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-            cb(null, file.fieldname + '-' + uniqueSuffix + ".jpg" )
-        }
-    })
-}).single("image")
-var product_id = "";
-router.post('/addproduct',async (req,res)=>{
-    try {
-        const {title,description,price,collecton,rating,overview,type,likes,marketplace,blockchain,expireDate,discount,status} = req.body;
-        console.log(req.body);
-        const AddedProduct = ProductModel({title,description,price,collecton,rating,overview,type,likes,marketplace,blockchain,expireDate,discount,status,image:""});
-        const result = await AddedProduct.save();
-        if(result){
-            product_id = JSON.stringify(result._id);
-            res.send({msg:"success"});
-        }
-    } catch (error) {
-        console.log(error);
-    }
-})
-router.post('/uploadProductimg', uploadProductimg , async (req,res)=>{
-    const {filename} = req.file;
-    product_id = product_id.replace(/^"(.*)"$/, '$1'); //removing double quotes
-    const result = await ProductModel.updateOne({_id:product_id},{$set:{image:filename}});
-    // console.log(result);
-    if(result){
-        res.send({msg:"success"});
-    }else{
-        res.send({msg:"failed"});
-    }
-})
-router.get('/deleteProduct/:id', async (req,res)=>{
-    try {
-        const result = await ProductModel.deleteOne({_id:req.params.id});
-        if(result){
-            console.log(result);
-            res.send({msg:"Deleted Successfuly"});
-        }
-    } catch (error) {
-        console.log(error);
-    }
-})
-router.get('/getProduct', async (req,res)=>{
-    try {
-        const result = await ProductModel.find();
-        if(result){
-            res.json(result);
-        }
-    } catch (error) {
-        console.log(error);
-    }
-})
-router.get('/getProductByid/:id',async (req,res)=>{
-    try {
-        const result = await ProductModel.findOne({_id:req.params.id});
-        res.send(result);
-    } catch (error) {
-        console.log(error);
-    }
-})
 router.post('/updatePassword',async(req,res)=>{
-    try {
-        
+    try { 
         console.log(req.body);
         let {oldPassword,newPassword,confirmNewPassword} = req.body;
         if(!oldPassword || !newPassword || !confirmNewPassword){
@@ -343,19 +262,22 @@ router.post('/updatePassword',async(req,res)=>{
         if(newPassword.length<8){
             res.send({msg:"Password must contain 8 characters"})
         }
-        const token = req.cookies.jwttoken; 
-        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
-        const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
-        const veriFyoldPassword = await bcrypt.compare(oldPassword,rootUser.password);
-        if(veriFyoldPassword){
-            newPassword = await bcrypt.hash(newPassword,12);
-            // console.log(newPassword);
-            const result = await UserModel.updateOne({_id:rootUser._id},{ $set:{ password:newPassword }})
-            if(result){
-                res.send({msg:"success"})
+        // const token = req.cookies.jwttoken;
+        const token = req.header("authToken");
+        if( token.length > 10 ){
+            const verifyToken = jwt.verify(token,"helloiamafaqstudentofuniversityofmanagementandtechonology");
+            const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
+            const veriFyoldPassword = await bcrypt.compare(oldPassword,rootUser.password);
+            if(veriFyoldPassword){
+                newPassword = await bcrypt.hash(newPassword,12);
+                // console.log(newPassword);
+                const result = await UserModel.updateOne({_id:rootUser._id},{ $set:{ password:newPassword }})
+                if(result){
+                    res.send({msg:"success"})
+                }
+            }else{
+                res.send({msg:"incorrect Password"});
             }
-        }else{
-            res.send({msg:"incorrect Password"});
         }
     } catch (error) {
         console.log(error);
@@ -363,12 +285,19 @@ router.post('/updatePassword',async(req,res)=>{
 })
 router.get('/userData',async (req,res)=>{
     try {
-        const token = req.cookies.jwttoken; 
-        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
-        const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
-        if(rootUser){
-            res.send(rootUser);
-        }   
+        // const token = req.cookies.jwttoken;
+        const token = req.header("authToken");
+        //console.log(token.length);
+        if(token.length>10){
+            //console.log("TOKEN RECEIVED");
+            const verifyToken = jwt.verify(token,"helloiamafaqstudentofuniversityofmanagementandtechonology");
+            const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
+            if(rootUser){
+                res.send(rootUser);
+            }  
+        } else{
+            //console.log("TOKEN NOT RECEIVED");
+        }
     } catch (error) {
         console.log(error);
     }    
@@ -397,17 +326,15 @@ router.get('/deleteWithdrawReq/:id',async (req,res)=>{
         console.log(error);
     }    
 })
-router.get('/checkAdmin', async (req,res)=>{
-    try {
-        const token = req.cookies.jwttoken; 
-        const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
-        const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
-        if(rootUser.email == "xyzafaq@gmail.com"){
-            res.send({msg:"admin"});
-        }  
-    } catch (error) {
-        console.log(error);
-    }
-})
+// router.post('/searchUser', async(req,res)=>{
+//     try {
+//         const {email} = req.body;
+//         console.log(email);
+//         const user = await UserModel.find({email});
+//         res.send( { msg:"success", userdata: user } );
+//     } catch (error) {
+//         console.log(error)
+//     }
+// })
 
 module.exports = router;
